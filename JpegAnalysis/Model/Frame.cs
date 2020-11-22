@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using JpegAnalysis.Model.Segment;
 
 namespace JpegAnalysis.Model
 {
 	class Frame
 	{
+		Image image = new Image();
+
 		private Task readTask;
 
 		~Frame () {
@@ -40,10 +43,36 @@ namespace JpegAnalysis.Model
 
 			Marker marker = new Marker();
 			marker.Read(binList);
-			if (!marker.IsEOI())
+			if (marker.Id=="EOI")
 			{
 				throw new Exception($"開始マーカーが不整合。:{marker.toString()}");
 			}
+
+			Console.WriteLine("ファイルの解析を開始。");
+			while (binList.Count > 0)
+			{
+				marker.Read(binList);
+				if (marker.Id != null)
+				{
+					if (marker.Id == "EOI")
+					{
+						Console.WriteLine("ファイルの解析を終了。");
+						return;
+					}
+
+					SegmentBase segment = new SegmentBase(marker);
+					segment.ReadSegment(binList);
+					if (marker.Id == "SOS")
+					{
+						image.ReadImageData(binList);
+					}
+				}
+				else
+				{
+					throw new Exception($"ファイルが壊れています。{marker.toString()}");
+				}
+			}
+
 		}
 	}
 }
