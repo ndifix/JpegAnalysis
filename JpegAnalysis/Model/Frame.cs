@@ -20,6 +20,7 @@ namespace JpegAnalysis.Model
 		public void ReadFrame(string inPath)
 		{
 			readTask = ReadFrameAsyncImpl(inPath);
+			readTask.Wait();
 		}
 
 		private async Task ReadFrameAsyncImpl(string inPath)
@@ -29,11 +30,19 @@ namespace JpegAnalysis.Model
 				throw new Exception($"存在しないファイルパスです。:{inPath}");
 			}
 
-			byte[] binary;
+			List<byte> binList;
 			using (var fs = new FileStream(inPath, FileMode.Open))
 			{
-				binary = new byte[fs.Length];
+				byte[] binary = new byte[fs.Length];
 				await fs.ReadAsync(binary, 0, (int)fs.Length);
+				binList = new List<byte>(binary);
+			}
+
+			Marker marker = new Marker();
+			marker.Read(binList);
+			if (!marker.IsEOI())
+			{
+				throw new Exception($"開始マーカーが不整合。:{marker.toString()}");
 			}
 		}
 	}
