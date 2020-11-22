@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using JpegAnalysis.Model.Segment;
+using System.Linq;
 
 namespace JpegAnalysis.Model
 {
@@ -49,6 +50,9 @@ namespace JpegAnalysis.Model
 			}
 
 			Console.WriteLine("ファイルの解析を開始。");
+
+			List<QuantizeTable> QTables = new List<QuantizeTable>();
+			List<HuffmanTable> HuffTables = new List<HuffmanTable>();
 			while (binList.Count > 0)
 			{
 				marker.Read(binList);
@@ -59,13 +63,36 @@ namespace JpegAnalysis.Model
 						Console.WriteLine("ファイルの解析を終了。");
 						return;
 					}
+					if (marker.Id == "DQT")
+					{
+						DQTSegment dqt = new DQTSegment(marker);
+						dqt.ReadSegment(binList);
+						QTables.Union(dqt.Tables);
+						continue;
+					}
+					if (marker.Id == "DHT")
+					{
+						DHTSegment dht = new DHTSegment(marker);
+						dht.ReadSegment(binList);
+						HuffTables.Union(dht.Tables);
+						continue;
+					}
+					if (marker.Id == "SOF")
+					{
+						SOFSegment sof = new SOFSegment(marker);
+						sof.ReadSegment(binList);
+						continue;
+					}
+					if (marker.Id == "SOS")
+					{
+						SOSSegment sos = new SOSSegment(marker);
+						sos.ReadSegment(binList);
+						image.ReadImageData(binList);
+						continue;
+					}
 
 					SegmentBase segment = new SegmentBase(marker);
 					segment.ReadSegment(binList);
-					if (marker.Id == "SOS")
-					{
-						image.ReadImageData(binList);
-					}
 				}
 				else
 				{

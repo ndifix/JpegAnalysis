@@ -4,9 +4,9 @@ namespace JpegAnalysis.Model.Segment
 {
 	class SegmentBase
 	{
-		private int length;
+		protected int length;
 
-		private byte[] param;
+		protected byte[] param;
 
 		public Marker SegMarker { get; private set; }
 
@@ -15,7 +15,7 @@ namespace JpegAnalysis.Model.Segment
 			SegMarker = marker;
 		}
 
-		public void ReadSegment(List<byte> bytes)
+		public virtual void ReadSegment(List<byte> bytes)
 		{
 			length = bytes[0] * 256 + bytes[1];
 			param = bytes.GetRange(2, length - 2).ToArray();
